@@ -161,6 +161,39 @@
 
     let activeBlock = BLOCKS[0], currentItem = null, closeTimer = null;
 
+    const params = new URLSearchParams(location.search);
+    if (params.get("admin") === "1") localStorage.setItem("vn_admin", "1");
+    if (params.get("admin") === "0") localStorage.removeItem("vn_admin");
+    const isAdmin = localStorage.getItem("vn_admin") === "1";
+    const prefix = isAdmin ? "[Свой тест] " : "";
+
+    function getDeviceInfo() {
+      const ua = navigator.userAgent || "";
+      let dev = "Устройство";
+      if (/iPhone/i.test(ua)) dev = "📱 iPhone";
+      else if (/iPad/i.test(ua)) dev = "📱 iPad";
+      else if (/Android/i.test(ua)) dev = "📱 Android";
+      else if (/Windows/i.test(ua)) dev = "💻 ПК (Windows)";
+      else if (/Macintosh/i.test(ua)) dev = "💻 Mac";
+
+      let br = "Браузер";
+      if (/Telegram/i.test(ua)) br = "Telegram-браузер";
+      else if (/YaBrowser/i.test(ua)) br = "Яндекс.Браузер";
+      else if (/CriOS|Chrome/i.test(ua) && !/Edg/i.test(ua)) br = "Chrome";
+      else if (/Safari/i.test(ua) && !/Chrome/i.test(ua)) br = "Safari";
+
+      return `${dev} (${br}, экран ${screen.width}×${screen.height})`;
+    }
+
+    function sendSignal(block, action) {
+      fetch(WEBHOOK_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ block: prefix + block, action: action })
+      }).catch(() => {});
+    }
+
     function initTabs() {
       const tabsEl = document.getElementById("tabs");
       BLOCKS.forEach(b => {
@@ -169,10 +202,12 @@
         btn.className = "tab-btn" + (b.id === activeBlock.id ? " active" : "");
         btn.innerHTML = `<span class="t-icon">${b.icon}</span><span>${b.tab}</span>`;
         btn.onclick = () => {
+          if (activeBlock.id === b.id) return;
           activeBlock = b;
           document.querySelectorAll(".tab-btn").forEach(el => el.classList.remove("active"));
           btn.classList.add("active");
           renderCards();
+          sendSignal("📂 Переключила раздел", `Вкладка: ${b.name}`);
         };
         tabsEl.appendChild(btn);
       });
@@ -194,16 +229,25 @@
     function openConfirm(emoji, title, sub, blockName) {
       if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
       currentItem = { emoji, title, blockName };
+      sendSignal(`🔍 Заглянула в карточку (${blockName})`, `👀 Открыла: ${emoji} ${title}`);
       const box = document.getElementById("modal-content");
       box.innerHTML = `
         <div class="m-emoji">${emoji}</div>
         <h2>${title}</h2>
         <p>${sub}</p>
         <div class="btn-row">
-          <button class="btn btn-no" type="button" onclick="closeModal()">Не хочу</button>
+          <button class="btn btn-no" type="button" onclick="rejectCard()">Не хочу</button>
           <button class="btn btn-yes" type="button" onclick="confirmSend()">Хочу</button>
         </div>`;
       document.getElementById("modal").classList.add("active");
+    }
+
+    function rejectCard() {
+      if (currentItem) {
+        sendSignal(`💭 Закрыла карточку (${currentItem.blockName})`, `Нажала «Не хочу»: ${currentItem.emoji} ${currentItem.title}`);
+        currentItem = null;
+      }
+      closeModal();
     }
 
     function confirmSend() {
@@ -216,12 +260,7 @@
         <h2>Отправляю запрос...</h2>
         <div class="sending-bar"><div class="sending-fill"></div></div>`;
 
-      fetch(WEBHOOK_URL, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({ action: `${emoji} ${title}`, block: blockName })
-      }).catch(() => {});
+      sendSignal(`🔥 НАЖАЛА «ХОЧУ»! (${blockName})`, `✅ ВЫБРАНО: ${emoji} ${title}`);
 
       setTimeout(() => {
         box.innerHTML = `
@@ -234,12 +273,17 @@
     }
 
     function closeModal() {
+      if (currentItem) {
+        sendSignal(`💭 Свернула карточку (${currentItem.blockName})`, `Закрыла фон: ${currentItem.emoji} ${currentItem.title}`);
+        currentItem = null;
+      }
       document.getElementById("modal").classList.remove("active");
       if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
     }
 
     initTabs();
     renderCards();
+    sendSignal("👀 ОТКРЫТ САЙТ", getDeviceInfo());
   </script>
 </body>
 </html>
