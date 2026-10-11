@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Меню хорошего дня ✨</title>
+  <style>
+    :root {
+      --bg: #FAF6F0;
+      --card-roy: #FFFDF9;
+      --card-personal: #FFFDF9;
+      --accent-roy: #E8D5C4;
+      --accent-personal: #DCE8E0;
+      --text: #2C2523;
+      --sub: #7A6E67;
+      --btn: #3B312E;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.35;
+      padding: 20px 16px calc(32px + env(safe-area-inset-bottom));
+      min-height: 100dvh;
+    }
+    .container {
+      max-width: 480px;
+      margin: 0 auto;
+    }
+    header {
+      text-align: center;
+      padding: 18px 16px 22px;
+      margin-bottom: 18px;
+      background: #FFFDF9;
+      border-radius: 24px;
+      box-shadow: 0 8px 24px rgba(60, 45, 35, 0.05);
+      border: 1px solid rgba(220, 205, 190, 0.45);
+    }
+    .badge {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 5px 12px;
+      border-radius: 99px;
+      background: #F3EAE0;
+      color: #6E5A4F;
+      margin-bottom: 10px;
+    }
+    header h1 {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 6px;
+    }
+    header p {
+      font-size: 14px;
+      color: var(--sub);
+    }
+    .section {
+      margin-bottom: 26px;
+    }
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 19px;
+      font-weight: 700;
+      margin: 0 4px 12px;
+      letter-spacing: -0.01em;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 11px;
+    }
+    .card {
+      appearance: none;
+      border: 1px solid rgba(215, 200, 188, 0.5);
+      background: var(--card-roy);
+      border-radius: 20px;
+      padding: 16px 14px;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 10px;
+      min-height: 104px;
+      cursor: pointer;
+      touch-action: manipulation;
+      user-select: none;
+      box-shadow: 0 6px 18px rgba(44, 37, 35, 0.04);
+      transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.12s ease;
+    }
+    .card.roy {
+      background: linear-gradient(160deg, #FFFDFB 0%, #FBF3EB 100%);
+    }
+    .card.personal {
+      background: linear-gradient(160deg, #FFFDFB 0%, #F2F7F4 100%);
+    }
+    .card:active, .card.pressed {
+      transform: scale(0.97);
+      box-shadow: 0 2px 8px rgba(44, 37, 35, 0.03);
+    }
+    .card-emoji {
+      font-size: 26px;
+      line-height: 1;
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.85);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+    }
+    .card-title {
+      font-size: 14.5px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(32, 26, 24, 0.45);
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.18s ease;
+      z-index: 100;
+    }
+    .modal-backdrop.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .modal {
+      background: #FFFDF9;
+      width: 100%;
+      max-width: 340px;
+      border-radius: 24px;
+      padding: 28px 22px 22px;
+      text-align: center;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.14);
+      transform: translateY(10px) scale(0.96);
+      transition: transform 0.18s ease;
+    }
+    .modal-backdrop.active .modal {
+      transform: translateY(0) scale(1);
+    }
+    .check-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: #E3F3E8;
+      color: #2A7B4C;
+      font-size: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+    }
+    .modal h2 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 18px;
+      color: var(--text);
+    }
+    .close-btn {
+      width: 100%;
+      border: none;
+      border-radius: 14px;
+      background: var(--btn);
+      color: #FFF;
+      font-size: 15px;
+      font-weight: 600;
+      padding: 13px;
+      cursor: pointer;
+      touch-action: manipulation;
+      transition: transform 0.12s ease;
+    }
+    .close-btn:active {
+      transform: scale(0.97);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="badge">🐾 Онлайн 24/7</div>
+      <h1>Кнопки желаний и Ройчика</h1>
+      <p>Выбирай любую карточку в одно касание</p>
+    </header>
+
+    <section class="section">
+      <div class="section-header"><span>🐾</span> <span>Господин Ройчик</span></div>
+      <div class="grid" id="grid-roy"></div>
+    </section>
+
+    <section class="section">
+      <div class="section-header"><span>✨</span> <span>Личное</span></div>
+      <div class="grid" id="grid-personal"></div>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" id="modal" onclick="closeModal()">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="check-icon">✓</div>
+      <h2>Ваш запрос принят, ожидайте ответа</h2>
+      <button class="close-btn" type="button" onclick="closeModal()">Закрыть</button>
+    </div>
+  </div>
+
+  <script>
+    // Сюда вставляется URL развёртывания Google Apps Script из Шага 1
+    const WEBHOOK_URL = "ВСТАВЬ_СЮДА_URL_APPS_SCRIPT";
+
+    const ROY_ITEMS = [
+      ["🐕", "Погулять с мелким"],
+      ["🚶‍♂️", "Погулять с мелким и его батей"],
+      ["🏠", "Забрать мелкого на день-два"],
+      ["📸", "Фоточка мелкого с прямого эфира"],
+      ["🎥", "Кружочек с мелким прямо сейчас"],
+      ["📰", "Новости мелкого за последние дни"],
+      ["🦴", "Выдать мелкому вкусняшку от меня"],
+      ["❤️‍🩹", "Срочная собакотерапия"]
+    ];
+
+    const PERSONAL_ITEMS = [
+      ["☕️", "Попить кофе"],
+      ["🍽", "Покушать в ресторане"],
+      ["🍦", "Привезти мороженку"],
+      ["💐", "Цветочки"],
+      ["🏡", "Поехать на дачу"],
+      ["🌲", "Поехать за город в лес"],
+      ["🚙", "Покататься на Ниве по грязи"],
+      ["🍿", "Сходить в кино"],
+      ["🌃", "Ночные покатушки по городу"],
+      ["🍔", "Вкусная вредная еда"],
+      ["🚕", "Приехать и забрать из скучного места"],
+      ["🫂", "Режим тишины и обнимашек"]
+    ];
+
+    let isLocked = false;
+    let closeTimer = null;
+
+    function renderGrid(containerId, items, blockName, typeClass) {
+      const container = document.getElementById(containerId);
+      items.forEach(([emoji, label]) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "card " + typeClass;
+        btn.innerHTML = `<div class="card-emoji">${emoji}</div><div class="card-title">${label}</div>`;
+        btn.addEventListener("click", () => handleSelect(`${emoji} ${label}`, blockName));
+        container.appendChild(btn);
+      });
+    }
+
+    function handleSelect(action, block) {
+      if (isLocked) return;
+      isLocked = true;
+      setTimeout(() => { isLocked = false; }, 2000);
+
+      showModal();
+
+      if (WEBHOOK_URL && !WEBHOOK_URL.includes("ВСТАВЬ_СЮДА")) {
+        fetch(WEBHOOK_URL, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ action: action, block: block })
+        }).catch(() => {});
+      }
+    }
+
+    function showModal() {
+      const modal = document.getElementById("modal");
+      modal.classList.add("active");
+      if (closeTimer) clearTimeout(closeTimer);
+      closeTimer = setTimeout(closeModal, 4000);
+    }
+
+    function closeModal() {
+      const modal = document.getElementById("modal");
+      modal.classList.remove("active");
+      if (closeTimer) {
+        clearTimeout(closeTimer);
+        closeTimer = null;
+      }
+    }
+
+    renderGrid("grid-roy", ROY_ITEMS, "Господин Ройчик 🐾", "roy");
+    renderGrid("grid-personal", PERSONAL_ITEMS, "Личное ✨", "personal");
+  </script>
+</body>
+</html>
