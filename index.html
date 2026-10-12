@@ -167,31 +167,82 @@
     const isAdmin = localStorage.getItem("vn_admin") === "1";
     const prefix = isAdmin ? "[Свой тест] " : "";
 
+    function isBotVisitor() {
+      const ua = navigator.userAgent || "";
+      if (navigator.webdriver) return true;
+      if (/HeadlessChrome|bot|crawler|spider|crawling|Preview|Lighthouse|GoogleOther|InspectionTool/i.test(ua)) return true;
+      if (screen.width === 800 && screen.height === 600) return true;
+      return false;
+    }
+
     function getDeviceInfo() {
       const ua = navigator.userAgent || "";
+      const w = Math.min(screen.width, screen.height);
+      const h = Math.max(screen.width, screen.height);
+      const dpr = window.devicePixelRatio || 1;
       let dev = "Устройство";
-      if (/iPhone/i.test(ua)) dev = "📱 iPhone";
-      else if (/iPad/i.test(ua)) dev = "📱 iPad";
-      else if (/Android/i.test(ua)) dev = "📱 Android";
-      else if (/Windows/i.test(ua)) dev = "💻 ПК (Windows)";
-      else if (/Macintosh/i.test(ua)) dev = "💻 Mac";
+
+      if (/iPhone/i.test(ua)) {
+        const iosMatch = ua.match(/OS (\d+[_\d]*)/);
+        const ios = iosMatch ? "iOS " + iosMatch[1].replace(/_/g, ".") : "iOS";
+        let model = `iPhone (${w}×${h})`;
+        if (w === 375 && h === 667) model = "iPhone SE / 8";
+        else if (w === 414 && h === 896 && dpr === 2) model = "iPhone 11 / XR";
+        else if (w === 375 && h === 812) model = "iPhone X / XS / 11 Pro / 13 mini";
+        else if (w === 390 && h === 844) model = "iPhone 12 / 13 / 14";
+        else if (w === 393 && h === 852) model = "iPhone 14 Pro / 15 / 15 Pro / 16";
+        else if (w === 402 && h === 874) model = "iPhone 16 Pro";
+        else if (w === 428 && h === 926) model = "iPhone 12/13 Pro Max / 14 Plus";
+        else if (w === 430 && h === 932) model = "iPhone 14/15 Pro Max / 15-16 Plus";
+        else if (w === 440 && h === 956) model = "iPhone 16 Pro Max";
+        dev = `📱 ${model} [${ios}]`;
+      } else if (/iPad/i.test(ua)) {
+        dev = `📱 iPad (${w}×${h})`;
+      } else if (/Android/i.test(ua)) {
+        const m = ua.match(/Android\s+([\d.]+);\s*([^;)]+)/i);
+        dev = m ? `📱 Android (${m[2].trim()}, Android ${m[1]})` : `📱 Android (${w}×${h})`;
+      } else if (/Windows/i.test(ua)) {
+        dev = `💻 ПК Windows (${screen.width}×${screen.height})`;
+      } else if (/Macintosh/i.test(ua)) {
+        dev = `💻 Mac (${screen.width}×${screen.height})`;
+      }
 
       let br = "Браузер";
-      if (/Telegram/i.test(ua)) br = "Telegram-браузер";
+      if (/Telegram/i.test(ua)) br = "Открыто внутри Telegram";
       else if (/YaBrowser/i.test(ua)) br = "Яндекс.Браузер";
       else if (/CriOS|Chrome/i.test(ua) && !/Edg/i.test(ua)) br = "Chrome";
       else if (/Safari/i.test(ua) && !/Chrome/i.test(ua)) br = "Safari";
 
-      return `${dev} (${br}, экран ${screen.width}×${screen.height})`;
+      return `${dev} | ${br}`;
     }
 
     function sendSignal(block, action) {
+      if (isBotVisitor()) return;
       fetch(WEBHOOK_URL, {
         method: "POST",
         mode: "no-cors",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify({ block: prefix + block, action: action })
       }).catch(() => {});
+    }
+
+    async function trackVisit() {
+      if (isBotVisitor()) return;
+      const base = getDeviceInfo();
+      try {
+        const res = await fetch("https://ipwho.is/?lang=ru");
+        const g = await res.json();
+        const isp = (g.connection && (g.connection.isp || g.connection.org)) || "";
+        if (/Google LLC|Amazon|Microsoft|GitHub|DigitalOcean|Linode|Hetzner/i.test(isp) && !/iPhone|Android/i.test(navigator.userAgent)) {
+          return;
+        }
+        const isMobIsp = /MegaFon|MTS|Mobile TeleSystems|VimpelCom|Beeline|Tele2|T2|Yota/i.test(isp);
+        const netType = isMobIsp ? "📡 Мобильная сеть (не дома / без Wi-Fi)" : "🏠 Домашний / офисный Wi-Fi";
+        const loc = [g.city, g.region, g.country].filter(Boolean).join(", ");
+        sendSignal("👀 ОТКРЫТ САЙТ", `${base} | 📍 ${loc} | ${netType}: ${isp} (IP: ${g.ip})`);
+      } catch (e) {
+        sendSignal("👀 ОТКРЫТ САЙТ", base);
+      }
     }
 
     function initTabs() {
@@ -283,7 +334,7 @@
 
     initTabs();
     renderCards();
-    sendSignal("👀 ОТКРЫТ САЙТ", getDeviceInfo());
+    trackVisit();
   </script>
 </body>
 </html>
